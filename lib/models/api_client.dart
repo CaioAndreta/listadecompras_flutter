@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -296,8 +298,92 @@ class ApiClient {
     }
   }
 
+  Future<bool> alterarEstadoProduto({
+    required String token, // O Token JWT obtido no Login
+    required int listaId,
+    required String nomeProduto,
+    required int novoEstadoCheck, // 1 (comprado) ou 2 (não comprado)
+  }) async {
+    final url = 'https://listadella.azurewebsites.net/apiListadella_desafio/AlterarEstadoProduto';
+
+    // Estrutura exata exigida pelo seu print do Postman
+    final body = {
+      "sdtReceberEstadoProdutoLista": {
+        "UsuarioListaId": listaId,
+        "UsuarioListaProdutosNome": nomeProduto,
+        "UsuarioListaProdutoCheck": novoEstadoCheck,
+      },
+    };
+
+    try {
+      final response = await _dio.post(
+        url,
+        data: body,
+        options: Options(contentType: Headers.jsonContentType),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final jsonResponse = response.data;
+
+        // Valida se a mensagem retornada foi "Sucesso" (conforme sua imagem)
+        if (jsonResponse['Messages'] != null && jsonResponse['Messages'][0]['Id'] == 'Sucesso') {
+          return true;
+        }
+      }
+      return false; // Retorna falso se o status code não for sucesso ou a mensagem for diferente
+    } catch (e) {
+      debugPrint('Erro na requisição: $e');
+      return false;
+    }
+  }
+
+  Future<Map<String, List<String>>> listarProdutos({required String token}) async {
+    final url = 'https://listadella.azurewebsites.net/apiListadella_desafio/SelecionarCategoriaProdutos';
+
+    try {
+      final response = await _dio.get(
+        url,
+        queryParameters: {
+          "UsuarioId": 56, // O Dio injeta automaticamente como ?UsuarioId=valor
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // 1. Decodifica o JSON raiz da resposta
+        final Map<String, dynamic> jsonResponse = response.data;
+
+        // 2. Verifica se a chave existe para evitar erros
+        if (jsonResponse.containsKey('ValorProdutoCategoria')) {
+          // Extrai a string que contém o JSON "escapado"
+          final String categoriasString = jsonResponse['ValorProdutoCategoria'];
+
+          // 3. Faz um NOVO decode apenas dessa string para transformá-la em um Map
+          final Map<String, dynamic> categoriasMapDecoded = jsonDecode(categoriasString);
+          // 4. Converte para um tipo forte (Map<String, List<String>>)
+          // para facilitar o uso nos seus Dropdowns (Selects)
+          final Map<String, List<String>> resultadoFinal = {};
+
+          categoriasMapDecoded.forEach((nomeCategoria, listaProdutos) {
+            // O List.from garante que o Flutter entenda os itens como Strings
+            resultadoFinal[nomeCategoria] = List<String>.from(listaProdutos);
+          });
+
+          return resultadoFinal;
+        }
+
+        return {}; // Retorna vazio se não vier a chave esperada
+      } else {
+        debugPrint('Falha ao buscar produtos. Status: ${response.statusCode}');
+        return {};
+      }
+    } catch (e) {
+      debugPrint('Erro na requisição listarProdutos: $e');
+      return {};
+    }
+  }
+
   Future<bool> _refreshToken() async {
-    final Dio _dioRefreshInstance = Dio(BaseOptions(baseUrl: "https://listadella.azurewebsites.net"));
+    final Dio dioRefreshInstance = Dio(BaseOptions(baseUrl: "https://listadella.azurewebsites.net"));
     try {
       final String url = "https://listadella.azurewebsites.net/oauth/access_token";
 
@@ -309,7 +395,7 @@ class ApiClient {
         'scope': 'FullControl',
       };
 
-      final response = await _dioRefreshInstance.post(
+      final response = await dioRefreshInstance.post(
         url,
         data: dadosDoLogin,
         options: Options(contentType: Headers.formUrlEncodedContentType, headers: {'User-Agent': 'Flutter-App/1.0'}),

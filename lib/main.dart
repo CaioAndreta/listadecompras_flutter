@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/detalhes.dart';
 import 'package:flutter_application_1/home.dart';
 import 'package:flutter_application_1/login.dart';
+import 'package:flutter_application_1/models/list_compras.dart';
 import 'package:flutter_application_1/sign_up.dart';
 
 void main() {
@@ -21,6 +23,10 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(), // Tela Home (a ser implementada)
         '/cadastro': (context) => const SignUpScreen(), // Tela de Cadastro (a ser implementada)
         '/login': (context) => const LoginScreen(), // Tela de Login
+        '/detalhes': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as ListaCompras;
+          return ListaDetalhesScreen(lista: args);
+        },
       },
     );
   }

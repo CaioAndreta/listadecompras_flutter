@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/controllers/api_client.dart';
+import 'package:flutter_application_1/models/api_client.dart';
+import 'package:flutter_application_1/models/list_compras.dart';
+import 'package:flutter_application_1/models/produto.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -41,7 +43,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (resultado != null) {
       setState(() {
-        // Como ajustamos a API acima, o 'resultado' já é a lista que você precisa!
         _listas = resultado;
         _isLoading = false;
       });
@@ -98,15 +99,21 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.all(12.0),
       itemCount: _listas.length,
       itemBuilder: (context, index) {
-        final lista = _listas[index];
-        final String titulo = lista['Titulo'] ?? 'Sem título';
+        final ListaCompras lista = ListaCompras.fromJson(_listas[index]);
+        final String titulo = lista.titulo;
+        final List<Produto> itens = lista.produtos;
+        final String subtext = itens.map((item) => item.nome).join(', ');
 
-        return Card(
-          elevation: 2,
-          margin: const EdgeInsets.symmetric(vertical: 6.0),
-          child: ListTile(
-            title: Text(titulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-            leading: const Icon(Icons.list_alt, color: Colors.blue),
+        return InkWell(
+          onTap: () => Navigator.pushNamed(context, '/detalhes', arguments: lista),
+          child: Card(
+            elevation: 2,
+            margin: const EdgeInsets.symmetric(vertical: 6.0),
+            child: ListTile(
+              title: Text(titulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+              subtitle: Text(subtext, style: const TextStyle(fontSize: 14)),
+              leading: const Icon(Icons.list_alt, color: Colors.blue),
+            ),
           ),
         );
       },
