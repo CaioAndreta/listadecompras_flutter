@@ -382,6 +382,47 @@ class ApiClient {
     }
   }
 
+  Future<bool> adicionarProdutoLista({
+    required int listaId,
+    required int categoriaId,
+    required String nomeProduto,
+  }) async {
+    final url = 'https://listadella.azurewebsites.net/apiListadella_desafio/AdicionaProdutoLista';
+    final body = jsonEncode({
+      "sdtNovoProdutoLista": {
+        "UsuarioListaId": listaId,
+        "CategoriaProdutoId": categoriaId,
+        "UsuarioListaProdutosNome": nomeProduto,
+      },
+    });
+
+    try {
+      final response = await _dio.post(
+        url,
+        data: body,
+        options: Options(contentType: Headers.jsonContentType, responseType: ResponseType.plain),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.data);
+
+        // Valida se a mensagem retornada foi "Sucesso" (conforme sua imagem)
+        //TODO: Tratar erro de produto já cadastrado
+        if (jsonResponse['Messages'] != null &&
+            jsonResponse['Messages'][0]['Id'] == 'Sucesso' &&
+            jsonResponse['Messages'][0]['Description'] == "Cadastro realizado com sucesso!") {
+          return true;
+        }
+      }
+
+      debugPrint('Falha ao adicionar. Status: ${response.statusCode}');
+      return false;
+    } catch (e) {
+      debugPrint('Erro na requisição adicionarProdutoLista: $e');
+      return false;
+    }
+  }
+
   Future<bool> _refreshToken() async {
     final Dio dioRefreshInstance = Dio(BaseOptions(baseUrl: "https://listadella.azurewebsites.net"));
     try {

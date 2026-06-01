@@ -62,14 +62,49 @@ class _NovoProdutoDialogState extends State<NovoProdutoDialog> {
 
         // BOTÃO CADASTRAR
         ElevatedButton(
-          // Só libera o clique se não estiver carregando E os dois selects estiverem preenchidos
           onPressed: (_isLoading || _categoriaSelecionada == null || _produtoSelecionado == null)
               ? null
-              : () {
-                  // TODO: Disparar requisição POST para salvar o item
+              : () async {
+                  // 1. Inicia o loading no modal para o usuário aguardar
+                  setState(() {
+                    _isLoading = true;
+                  });
 
-                  debugPrint('Cadastrar: $_categoriaSelecionada - $_produtoSelecionado');
-                  Navigator.of(context).pop();
+                  // 2. Descobre o ID numérico da Categoria selecionada
+                  // Pega todas as chaves (nomes das categorias) em forma de lista
+                  final listaCategorias = _categoriasEProdutos.keys.toList();
+                  // Acha a posição da categoria selecionada e soma 1 (pois o index começa em 0)
+                  final int categoriaId = listaCategorias.indexOf(_categoriaSelecionada!) + 1;
+
+                  // 4. Faz a chamada POST
+                  final sucesso = await apiClient.adicionarProdutoLista(
+                    listaId: widget.listaId,
+                    categoriaId: categoriaId,
+                    nomeProduto: _produtoSelecionado!,
+                  );
+
+
+                  // 5. Trata o resultado
+                  if (!mounted) return;
+
+                  if (sucesso) {
+                    Navigator.of(context).pop({
+                      'nome': _produtoSelecionado!,
+                      'categoria': _categoriaSelecionada!,
+                    }); // Fecha o modal avisando que deu certo
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Produto adicionado com sucesso!'), backgroundColor: Colors.green),
+                    );
+
+                    // Dica: Na sua tela principal, você pode usar um .then() após o showDialog
+                    // para recarregar a lista caso a inserção tenha dado certo!
+                  } else {
+                    setState(() {
+                      _isLoading = false;
+                      _erro = 'Falha ao cadastrar o produto.';
+                    });
+                  }
                 },
           child: const Text('Cadastrar'),
         ),

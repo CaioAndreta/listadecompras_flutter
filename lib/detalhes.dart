@@ -36,18 +36,33 @@ class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
     return mapa;
   }
 
-  void _mostrarPopupNovoItem(BuildContext context) {
-    showDialog(
+  void _mostrarPopupNovoItem(BuildContext context) async {
+    // 1. O 'await' faz o código pausar aqui até o modal ser fechado.
+    // O resultado captura o que foi passado dentro do Navigator.pop lá no modal.
+    final dynamic resultado = await showDialog(
       context: context,
-      // O dialog não pode ser fechado clicando fora enquanto carrega (opcional)
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return NovoProdutoDialog(
-          // Passe as informações necessárias para a API aqui
-          listaId: int.tryParse(widget.lista.listaId.toString()) ?? 0,
-        );
+        return NovoProdutoDialog(listaId: int.tryParse(widget.lista.listaId.toString()) ?? 0);
       },
     );
+
+    // 2. Se o resultado não for nulo (ou seja, fechou no botão "Cadastrar" e não no "Cancelar")
+    // e o widget ainda estiver na tela (mounted)
+    if (resultado != null && resultado is Map && mounted) {
+      // 3. Atualiza a tela instantaneamente com o novo dado
+      setState(() {
+        _produtos.add(
+          Produto(
+            nome: resultado['nome'],
+            categoria: resultado['categoria'],
+            // Como é um produto novo, ele entra como desmarcado.
+            // Ajuste a propriedade abaixo para bater com o que existe no seu modelo Produto (ex: isChecked: false ou check: 2)
+            check: 2,
+          ),
+        );
+      });
+    }
   }
 
   @override
