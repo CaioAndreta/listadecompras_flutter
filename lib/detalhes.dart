@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/api_client.dart';
 import 'package:flutter_application_1/models/list_compras.dart';
 import 'package:flutter_application_1/models/produto.dart';
+import 'package:flutter_application_1/novo_produto_modal.dart';
 
 class ListaDetalhesScreen extends StatefulWidget {
   // Recebe o objeto completo da lista
@@ -35,6 +36,20 @@ class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
     return mapa;
   }
 
+  void _mostrarPopupNovoItem(BuildContext context) {
+    showDialog(
+      context: context,
+      // O dialog não pode ser fechado clicando fora enquanto carrega (opcional)
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return NovoProdutoDialog(
+          // Passe as informações necessárias para a API aqui
+          listaId: int.tryParse(widget.lista.listaId.toString()) ?? 0,
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final categoriasAgrupadas = _produtosAgrupados;
@@ -46,7 +61,7 @@ class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
         foregroundColor: Colors.white,
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => {},
+        onPressed: () => _mostrarPopupNovoItem(context),
         backgroundColor: Colors.blue,
         child: const Icon(Icons.add, color: Colors.white),
       ),

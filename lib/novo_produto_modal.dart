@@ -3,9 +3,8 @@ import 'package:flutter_application_1/models/api_client.dart';
 
 class NovoProdutoDialog extends StatefulWidget {
   final int listaId;
-  final String token;
 
-  const NovoProdutoDialog({super.key, required this.listaId, required this.token});
+  const NovoProdutoDialog({super.key, required this.listaId});
 
   @override
   State<NovoProdutoDialog> createState() => _NovoProdutoDialogState();
@@ -30,7 +29,7 @@ class _NovoProdutoDialogState extends State<NovoProdutoDialog> {
 
   Future<void> _buscarCategoriasEProdutos() async {
     try {
-      final dados = await apiClient.listarProdutos(token: widget.token);
+      final dados = await apiClient.listarProdutos();
 
       if (mounted) {
         setState(() {

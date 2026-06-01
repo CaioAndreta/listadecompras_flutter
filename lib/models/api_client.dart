@@ -337,7 +337,7 @@ class ApiClient {
     }
   }
 
-  Future<Map<String, List<String>>> listarProdutos({required String token}) async {
+  Future<Map<String, List<String>>> listarProdutos() async {
     final url = 'https://listadella.azurewebsites.net/apiListadella_desafio/SelecionarCategoriaProdutos';
 
     try {
