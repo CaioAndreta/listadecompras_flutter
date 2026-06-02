@@ -388,6 +388,7 @@ class ApiClient {
     required int listaId,
     required int categoriaId,
     required String nomeProduto,
+    Function(String)? onError,
   }) async {
     final url = 'https://listadella.azurewebsites.net/apiListadella_desafio/AdicionaProdutoLista';
     final body = jsonEncode({
@@ -408,19 +409,32 @@ class ApiClient {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> jsonResponse = jsonDecode(response.data);
 
-        // Valida se a mensagem retornada foi "Sucesso" (conforme sua imagem)
-        //TODO: Tratar erro de produto já cadastrado
-        if (jsonResponse['Messages'] != null &&
-            jsonResponse['Messages'][0]['Id'] == 'Sucesso' &&
-            jsonResponse['Messages'][0]['Description'] == "Cadastro realizado com sucesso!") {
-          return true;
+        if (jsonResponse['Messages'] != null && jsonResponse['Messages'].isNotEmpty) {
+          final String messageId = jsonResponse['Messages'][0]['Id'];
+          final String description = jsonResponse['Messages'][0]['Description'];
+
+          if (messageId == 'Sucesso') {
+            return true;
+          }
+          else if (messageId == 'Error') {
+            if (onError != null) {
+              // Se a descrição da API indicar duplicidade, personaliza a mensagem
+              if (description.contains('já existe')) {
+                onError('Produto já cadastrado');
+              } else {
+                onError(description);
+              }
+            }
+            return false;
+          }
         }
       }
 
-      debugPrint('Falha ao adicionar. Status: ${response.statusCode}');
+      if (onError != null) onError('Falha ao adicionar o produto.');
       return false;
     } catch (e) {
       debugPrint('Erro na requisição adicionarProdutoLista: $e');
+      if (onError != null) onError('Erro de conexão com o servidor.');
       return false;
     }
   }

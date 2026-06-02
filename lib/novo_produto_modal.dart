@@ -66,24 +66,28 @@ class _NovoProdutoDialogState extends State<NovoProdutoDialog> {
           onPressed: (_isLoading || _categoriaSelecionada == null || _produtoSelecionado == null)
               ? null
               : () async {
-                  // 1. Inicia o loading no modal para o usuário aguardar
+                  // 1. Inicia o loading no modal e limpa erros antigos
                   setState(() {
                     _isLoading = true;
+                    _erro = '';
                   });
 
                   // 2. Descobre o ID numérico da Categoria selecionada
-                  // Pega todas as chaves (nomes das categorias) em forma de lista
                   final listaCategorias = _categoriasEProdutos.keys.toList();
-                  // Acha a posição da categoria selecionada e soma 1 (pois o index começa em 0)
                   final int categoriaId = listaCategorias.indexOf(_categoriaSelecionada!) + 1;
 
-                  // 4. Faz a chamada POST
+                  // 3. Criamos uma variável local para segurar a mensagem se o onError for disparado
+                  String? mensagemDeErroDaAPI;
+
+                  // 4. Faz a chamada POST passando o callback
                   final sucesso = await apiClient.adicionarProdutoLista(
                     listaId: widget.listaId,
                     categoriaId: categoriaId,
                     nomeProduto: _produtoSelecionado!,
+                    onError: (mensagem) {
+                      mensagemDeErroDaAPI = mensagem; // Captura "Produto já cadastrado"
+                    },
                   );
-
 
                   // 5. Trata o resultado
                   if (!mounted) return;
@@ -97,13 +101,11 @@ class _NovoProdutoDialogState extends State<NovoProdutoDialog> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Produto adicionado com sucesso!'), backgroundColor: Colors.green),
                     );
-
-                    // Dica: Na sua tela principal, você pode usar um .then() após o showDialog
-                    // para recarregar a lista caso a inserção tenha dado certo!
                   } else {
+                    // 6. Atualiza a interface exibindo a mensagem amigável sem estourar erros no app
                     setState(() {
                       _isLoading = false;
-                      _erro = 'Falha ao cadastrar o produto.';
+                      _erro = mensagemDeErroDaAPI ?? 'Falha ao cadastrar o produto.';
                     });
                   }
                 },
