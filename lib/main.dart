@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/detalhes.dart';
 import 'package:flutter_application_1/home.dart';
 import 'package:flutter_application_1/login.dart';
+import 'package:flutter_application_1/models/auth_guard.dart';
 import 'package:flutter_application_1/models/list_compras.dart';
 import 'package:flutter_application_1/sign_up.dart';
 import 'package:flutter_application_1/splash_screen.dart';
@@ -19,15 +20,16 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
-      initialRoute: '/splash',
+      initialRoute: '/',
       routes: {
-        '/splash': (context) => const SplashScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/cadastro': (context) => const SignUpScreen(),
+        '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
+        '/cadastro': (context) => const SignUpScreen(),
+        // Abaixo telas protegidas por autenticação
+        '/home': (context) => const AuthGuard(child: HomeScreen()),
         '/detalhes': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as ListaCompras;
-          return ListaDetalhesScreen(lista: args);
+          return AuthGuard(child: ListaDetalhesScreen(lista: args));
         },
       },
     );
