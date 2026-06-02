@@ -6,6 +6,7 @@ import 'package:flutter_application_1/models/auth_guard.dart';
 import 'package:flutter_application_1/models/list_compras.dart';
 import 'package:flutter_application_1/sign_up.dart';
 import 'package:flutter_application_1/splash_screen.dart';
+import 'package:flutter_application_1/theme/app_theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,8 +19,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
+      title: 'Lista de Mercado',
+      theme: appTheme(),
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),

@@ -4,6 +4,9 @@ import 'package:flutter_application_1/models/api_client.dart';
 import 'package:flutter_application_1/models/list_compras.dart';
 import 'package:flutter_application_1/models/produto.dart';
 import 'package:flutter_application_1/novo_produto_modal.dart';
+import 'package:flutter_application_1/theme/app_colors.dart';
+import 'package:flutter_application_1/theme/app_constants.dart';
+import 'package:flutter_application_1/theme/app_text_styles.dart';
 
 class ListaDetalhesScreen extends StatefulWidget {
   // Recebe o objeto completo da lista
@@ -37,8 +40,6 @@ class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
   }
 
   void _mostrarPopupNovoItem(BuildContext context) async {
-    // 1. O 'await' faz o código pausar aqui até o modal ser fechado.
-    // O resultado captura o que foi passado dentro do Navigator.pop lá no modal.
     final dynamic resultado = await showDialog(
       context: context,
       barrierDismissible: false,
@@ -47,20 +48,9 @@ class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
       },
     );
 
-    // 2. Se o resultado não for nulo (ou seja, fechou no botão "Cadastrar" e não no "Cancelar")
-    // e o widget ainda estiver na tela (mounted)
     if (resultado != null && resultado is Map && mounted) {
-      // 3. Atualiza a tela instantaneamente com o novo dado
       setState(() {
-        _produtos.add(
-          Produto(
-            nome: resultado['nome'],
-            categoria: resultado['categoria'],
-            // Como é um produto novo, ele entra como desmarcado.
-            // Ajuste a propriedade abaixo para bater com o que existe no seu modelo Produto (ex: isChecked: false ou check: 2)
-            check: 2,
-          ),
-        );
+        _produtos.add(Produto(nome: resultado['nome'], categoria: resultado['categoria'], check: 2));
       });
     }
   }
@@ -73,17 +63,19 @@ class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.lista.titulo),
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
+        // Cores removidas: O AppTheme assume o controle via ColorScheme
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _mostrarPopupNovoItem(context),
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.add, color: Colors.white),
+        // Cores removidas: O floatingActionButtonTheme do AppTheme já aplica o Laranja Primário e Ícone Branco
+        child: const Icon(Icons.add),
       ),
       body: categoriasAgrupadas.isEmpty
-          ? const Center(
-              child: Text('Nenhum produto nesta lista.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+          ? Center(
+              child: Text(
+                'Nenhum produto nesta lista.',
+                style: AppTextStyles.bodyMd.copyWith(color: AppColors.bodyMid),
+              ),
             )
           : ListView.builder(
               itemCount: categoriasAgrupadas.keys.length,
@@ -96,11 +88,11 @@ class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
                   children: [
                     Container(
                       width: double.infinity,
-                      color: Colors.grey.shade200,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      color: AppColors.canvasSoft,
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
                       child: Text(
                         nomeCategoria.toUpperCase(),
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
+                        style: AppTextStyles.eyebrowUppercase.copyWith(color: AppColors.body),
                       ),
                     ),
                     ...itensDaCategoria.map((produto) {
@@ -108,10 +100,10 @@ class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
                         key: ValueKey('${produto.nome}_${produto.categoria}'),
                         direction: DismissDirection.endToStart,
                         background: Container(
-                          color: Colors.red.shade400,
+                          color: AppColors.error,
                           alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20),
-                          child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+                          padding: const EdgeInsets.only(right: AppSpacing.xl),
+                          child: const Icon(Icons.delete_outline, color: AppColors.onError, size: 28),
                         ),
                         onDismissed: (direction) {
                           setState(() {
@@ -127,11 +119,8 @@ class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
                             SnackBar(content: Text('${produto.nome} removido.'), duration: const Duration(seconds: 2)),
                           );
                         },
-
-                        // Chamamos o novo componente passando o produto e o ID da lista
                         child: ProdutoListItem(
                           produto: produto,
-                          // Converte o ID da lista para inteiro (ajuste se seu modelo já for int)
                           listaId: int.tryParse(widget.lista.listaId.toString()) ?? 0,
                         ),
                       );
@@ -160,7 +149,6 @@ class _ProdutoListItemState extends State<ProdutoListItem> {
 
   @override
   void dispose() {
-    // Cancela o timer se o widget for destruído (ex: usuário fez scroll rápido)
     _debounce?.cancel();
     super.dispose();
   }
@@ -169,17 +157,14 @@ class _ProdutoListItemState extends State<ProdutoListItem> {
     final bool marcarComoComprado = newValue ?? false;
     final int checkStatusDaAPI = marcarComoComprado ? 1 : 2;
 
-    // 1. ATUALIZAÇÃO OTIMISTA: Muda a UI na hora
     setState(() {
       widget.produto.isChecked = marcarComoComprado;
     });
 
-    // 2. DEBOUNCE: Cancela o timer anterior se houver novos cliques rápidos
     if (_debounce?.isActive ?? false) {
       _debounce!.cancel();
     }
 
-    // 3. Inicia um novo Timer de 500ms
     _debounce = Timer(const Duration(milliseconds: 500), () async {
       final sucesso = await apiClient.alterarEstadoProduto(
         token: 'SEU_TOKEN_SALVO',
@@ -188,7 +173,6 @@ class _ProdutoListItemState extends State<ProdutoListItem> {
         novoEstadoCheck: checkStatusDaAPI,
       );
 
-      // 4. ROLLBACK: Se a API falhar, desfaz a alteração visual
       if (!sucesso && mounted) {
         setState(() {
           widget.produto.isChecked = !marcarComoComprado;
@@ -197,7 +181,7 @@ class _ProdutoListItemState extends State<ProdutoListItem> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Falha ao atualizar "${widget.produto.nome}".'),
-            backgroundColor: Colors.red.shade600,
+            backgroundColor: AppColors.error,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -209,13 +193,12 @@ class _ProdutoListItemState extends State<ProdutoListItem> {
   Widget build(BuildContext context) {
     return CheckboxListTile(
       controlAffinity: ListTileControlAffinity.leading,
-      activeColor: Colors.green,
+      // ActiveColor removido. Ele puxará o AppColors.primary automaticamente pelo tema.
       title: Text(
         widget.produto.nome,
-        style: TextStyle(
-          fontSize: 16,
+        style: AppTextStyles.bodyMd.copyWith(
           decoration: widget.produto.isChecked ? TextDecoration.lineThrough : TextDecoration.none,
-          color: widget.produto.isChecked ? Colors.grey : Colors.black87,
+          color: widget.produto.isChecked ? AppColors.bodyMid : AppColors.ink,
         ),
       ),
       value: widget.produto.isChecked,

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/auth.dart';
+import 'package:flutter_application_1/theme/app_colors.dart';
+import 'package:flutter_application_1/theme/app_constants.dart';
+import 'package:flutter_application_1/theme/app_text_styles.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -18,7 +21,10 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _verificarStatusLogin() async {
-    auth.verificarStatusLogin().then((isLoggedIn) {
+    try {
+      // Executa a checagem assíncrona de forma limpa com await
+      final bool isLoggedIn = await auth.verificarStatusLogin();
+
       if (!mounted) return;
 
       if (isLoggedIn) {
@@ -28,28 +34,34 @@ class _SplashScreenState extends State<SplashScreen> {
         // Usuário não logado: manda para o Login
         Navigator.pushReplacementNamed(context, '/login');
       }
-    }).catchError((error) {
-      // Em caso de erro, trate como deslogado para evitar que o app quebre
+    } catch (error) {
+      // Tratamento de erro centralizado no bloco catch
       debugPrint('Erro ao verificar status de login: $error');
+
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/login');
       }
-    });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Colors.white, // Substitua pela cor principal do seu app
+    return Scaffold(
+      backgroundColor: AppColors.canvas, // O tom de cream quente do seu Design System
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(color: Colors.white),
-            SizedBox(height: 16),
+            const CircularProgressIndicator(
+              color: AppColors.primary, // Laranja oficial e saturado para o loading
+            ),
+            const SizedBox(height: AppSpacing.lg), // 16px padronizado da escala
             Text(
               'Carregando...',
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              style: AppTextStyles.bodyMd.copyWith(
+                color: AppColors.ink, // Contraste elegante usando o tom café escuro
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),

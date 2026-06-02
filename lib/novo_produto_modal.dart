@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/api_client.dart';
+import 'package:flutter_application_1/theme/app_colors.dart';
+import 'package:flutter_application_1/theme/app_constants.dart';
+import 'package:flutter_application_1/theme/app_text_styles.dart';
 
 class NovoProdutoDialog extends StatefulWidget {
   final int listaId;
@@ -11,8 +14,8 @@ class NovoProdutoDialog extends StatefulWidget {
 }
 
 class _NovoProdutoDialogState extends State<NovoProdutoDialog> {
-  // Estados do Modal
-  bool _isLoading = true;
+  bool _isLoading = true; // Controla o carregamento inicial das categorias
+  bool _isSaving = false; // Controla o carregamento do botão cadastrar
   String _erro = '';
   Map<String, List<String>> _categoriasEProdutos = {};
   ApiClient apiClient = ApiClient();
@@ -23,7 +26,6 @@ class _NovoProdutoDialogState extends State<NovoProdutoDialog> {
   @override
   void initState() {
     super.initState();
-    // Dispara a requisição GET assim que o modal é construído
     _buscarCategoriasEProdutos();
   }
 
@@ -49,82 +51,91 @@ class _NovoProdutoDialogState extends State<NovoProdutoDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final bool podeCadastrar =
+        !_isLoading && !_isSaving && _categoriaSelecionada != null && _produtoSelecionado != null;
+
     return AlertDialog(
       title: const Text('Adicionar Novo Produto'),
-      content: _buildContent(), // Separei o miolo do dialog para ficar limpo
+      content: _buildContent(),
       actions: [
         // BOTÃO CANCELAR
         TextButton(
-          // Desabilita o botão se estiver carregando
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancelar', style: TextStyle(color: Colors.red)),
+          onPressed: (_isLoading || _isSaving) ? null : () => Navigator.of(context).pop(),
+          style: TextButton.styleFrom(foregroundColor: AppColors.error), // Uso semântico do vermelho de erro
+          child: const Text('Cancelar'),
         ),
 
         // BOTÃO CADASTRAR
         ElevatedButton(
-          onPressed: (_isLoading || _categoriaSelecionada == null || _produtoSelecionado == null)
+          onPressed: !podeCadastrar
               ? null
               : () async {
-                  // 1. Inicia o loading no modal e limpa erros antigos
                   setState(() {
-                    _isLoading = true;
+                    _isSaving = true;
                     _erro = '';
                   });
 
-                  // 2. Descobre o ID numérico da Categoria selecionada
                   final listaCategorias = _categoriasEProdutos.keys.toList();
                   final int categoriaId = listaCategorias.indexOf(_categoriaSelecionada!) + 1;
 
-                  // 3. Criamos uma variável local para segurar a mensagem se o onError for disparado
                   String? mensagemDeErroDaAPI;
 
-                  // 4. Faz a chamada POST passando o callback
                   final sucesso = await apiClient.adicionarProdutoLista(
                     listaId: widget.listaId,
                     categoriaId: categoriaId,
                     nomeProduto: _produtoSelecionado!,
                     onError: (mensagem) {
-                      mensagemDeErroDaAPI = mensagem; // Captura "Produto já cadastrado"
+                      mensagemDeErroDaAPI = mensagem;
                     },
                   );
 
-                  // 5. Trata o resultado
                   if (!mounted) return;
 
                   if (sucesso) {
-                    Navigator.of(context).pop({
-                      'nome': _produtoSelecionado!,
-                      'categoria': _categoriaSelecionada!,
-                    }); // Fecha o modal avisando que deu certo
+                    Navigator.of(context).pop({'nome': _produtoSelecionado!, 'categoria': _categoriaSelecionada!});
 
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Produto adicionado com sucesso!'), backgroundColor: Colors.green),
+                      const SnackBar(
+                        content: Text('Produto adicionado com sucesso!'),
+                        // Deixamos o background herdar o padrão neutro escuro do tema
+                      ),
                     );
                   } else {
-                    // 6. Atualiza a interface exibindo a mensagem amigável sem estourar erros no app
                     setState(() {
-                      _isLoading = false;
+                      _isSaving = false;
                       _erro = mensagemDeErroDaAPI ?? 'Falha ao cadastrar o produto.';
                     });
                   }
                 },
-          child: const Text('Cadastrar'),
+          child: _isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.onPrimary, // Contraste perfeito sobre o laranja
+                  ),
+                )
+              : const Text('Cadastrar'),
         ),
       ],
     );
   }
 
-  // Define o que aparece no meio do modal baseado no estado (Carregando, Erro ou Formulário)
   Widget _buildContent() {
     if (_isLoading) {
       return const Column(
         mainAxisSize: MainAxisSize.min,
-        children: [CircularProgressIndicator(), SizedBox(height: 16), Text('Carregando categorias...')],
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(height: AppSpacing.lg),
+          Text('Carregando categorias...'),
+        ],
       );
     }
 
     if (_erro.isNotEmpty) {
-      return Text(_erro, style: const TextStyle(color: Colors.red));
+      return Text(_erro, style: AppTextStyles.caption.copyWith(color: AppColors.error));
     }
 
     return Column(
@@ -132,35 +143,42 @@ class _NovoProdutoDialogState extends State<NovoProdutoDialog> {
       children: [
         // --- DROPDOWN 1: CATEGORIA ---
         DropdownButtonFormField<String>(
-          decoration: const InputDecoration(labelText: 'Categoria', border: OutlineInputBorder()),
+          decoration: const InputDecoration(labelText: 'Categoria'),
           value: _categoriaSelecionada,
           hint: const Text('Selecione uma categoria'),
           isExpanded: true,
           items: _categoriasEProdutos.keys.map((String categoria) {
-            return DropdownMenuItem<String>(value: categoria, child: Text(categoria));
+            return DropdownMenuItem<String>(
+              value: categoria,
+              child: Text(categoria, style: AppTextStyles.bodyMd),
+            );
           }).toList(),
-          onChanged: (String? novaCategoria) {
-            setState(() {
-              _categoriaSelecionada = novaCategoria;
-              _produtoSelecionado = null; // Reseta o produto ao mudar a categoria
-            });
-          },
+          onChanged: _isSaving
+              ? null // Bloqueia interação enquanto salva
+              : (String? novaCategoria) {
+                  setState(() {
+                    _categoriaSelecionada = novaCategoria;
+                    _produtoSelecionado = null;
+                  });
+                },
         ),
 
-        const SizedBox(height: 16),
-
+        const SizedBox(height: AppSpacing.lg), // 16px padronizado
         // --- DROPDOWN 2: PRODUTO ---
         DropdownButtonFormField<String>(
-          decoration: const InputDecoration(labelText: 'Produto', border: OutlineInputBorder()),
+          decoration: const InputDecoration(labelText: 'Produto'),
           value: _produtoSelecionado,
           hint: const Text('Selecione um produto'),
           isExpanded: true,
           items: _categoriaSelecionada == null
               ? []
               : _categoriasEProdutos[_categoriaSelecionada]!.map((String produto) {
-                  return DropdownMenuItem<String>(value: produto, child: Text(produto));
+                  return DropdownMenuItem<String>(
+                    value: produto,
+                    child: Text(produto, style: AppTextStyles.bodyMd),
+                  );
                 }).toList(),
-          onChanged: _categoriaSelecionada == null
+          onChanged: (_categoriaSelecionada == null || _isSaving)
               ? null
               : (String? novoProduto) {
                   setState(() {

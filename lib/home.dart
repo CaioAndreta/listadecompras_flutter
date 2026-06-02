@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/api_client.dart';
 import 'package:flutter_application_1/models/list_compras.dart';
 import 'package:flutter_application_1/models/produto.dart';
+import 'package:flutter_application_1/theme/app_colors.dart';
+import 'package:flutter_application_1/theme/app_constants.dart';
+import 'package:flutter_application_1/theme/app_text_styles.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,7 +24,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Garante que o contexto está pronto antes de rodar a requisição
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _carregarListas();
     });
@@ -37,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       onError: (mensagem) {
         setState(() {
-          _erroMensagem = mensagem;
+          _erroMensagem = messageIdToUserMessage(mensagem); // Tratamento amigável
           _isLoading = false;
         });
       },
@@ -51,6 +53,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // Método auxiliar para traduzir mensagens brutas se necessário
+  String messageIdToUserMessage(String message) {
+    if (message.contains('Error')) return 'Falha ao carregar listas do servidor.';
+    return message;
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -60,8 +68,8 @@ class _HomeScreenState extends State<HomeScreen> {
         body: _buildBody(),
         floatingActionButton: FloatingActionButton(
           onPressed: _mostrarPopupNovaLista,
-          backgroundColor: Colors.blue,
-          child: const Icon(Icons.add, color: Colors.white),
+          // Cores manuais removidas: herdadas do floatingActionButtonTheme do seu AppTheme
+          child: const Icon(Icons.add),
         ),
       ),
     );
@@ -77,16 +85,16 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_erroMensagem != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 _erroMensagem!,
-                style: const TextStyle(color: Colors.red, fontSize: 16),
                 textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMd.copyWith(color: AppColors.error),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               ElevatedButton(onPressed: _carregarListas, child: const Text('Tentar Novamente')),
             ],
           ),
@@ -96,18 +104,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 3. Estado de Lista Vazia
     if (_listas.isEmpty) {
-      return const Center(child: Text('Nenhuma lista encontrada.'));
+      return Center(
+        child: Text('Nenhuma lista encontrada.', style: AppTextStyles.bodyMd.copyWith(color: AppColors.bodyMid)),
+      );
     }
 
     // 4. Exibição dos dados com Cards contendo apenas o Título
     return ListView.builder(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.all(AppSpacing.md),
       itemCount: _listas.length,
       itemBuilder: (context, index) {
         final ListaCompras lista = ListaCompras.fromJson(_listas[index]);
         final String titulo = lista.titulo;
         final List<Produto> itens = lista.produtos;
-        final String subtext = itens.map((item) => item.nome).join(', ');
+        final String subtext = itens.isEmpty ? 'Nenhum produto cadastrado' : itens.map((item) => item.nome).join(', ');
 
         return InkWell(
           onTap: () async {
@@ -117,12 +127,23 @@ class _HomeScreenState extends State<HomeScreen> {
             }
           },
           child: Card(
-            elevation: 2,
-            margin: const EdgeInsets.symmetric(vertical: 6.0),
+            margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+            // Opcional: Se quiser reforçar a cor de card do seu design system:
+            color: AppColors.canvasSoft,
+            elevation: 0, // Zapier DS foca em flats/bordas sutis em vez de sombras pesadas
+            shape: const RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
             child: ListTile(
-              title: Text(titulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-              subtitle: Text(subtext, style: const TextStyle(fontSize: 14)),
-              leading: const Icon(Icons.list_alt, color: Colors.blue),
+              title: Text(
+                titulo,
+                style: AppTextStyles.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.ink),
+              ),
+              subtitle: Text(
+                subtext,
+                style: AppTextStyles.caption, // Já configurado para 14px e AppColors.bodyMid
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              leading: const Icon(Icons.list_alt, color: AppColors.primary),
             ),
           ),
         );
@@ -136,9 +157,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     showDialog(
       context: context,
-      barrierDismissible: false, // Impede fechar clicando fora enquanto salva
+      barrierDismissible: false,
       builder: (context) {
-        // O StatefulBuilder serve para atualizarmos o estado do botão (carregando) apenas dentro do popup
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
             return AlertDialog(
@@ -149,12 +169,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Nome da Lista',
                   hintText: 'Ex: Compras do Mês',
-                  border: OutlineInputBorder(),
+                  // Borda removida daqui: O inputDecorationTheme do seu AppTheme já cuida do OutlineInputBorder global
                 ),
               ),
               actions: [
                 TextButton(
-                  onPressed: salvando ? null : () => {Navigator.pop(dialogContext)},
+                  onPressed: salvando ? null : () => Navigator.pop(dialogContext),
                   child: const Text('Cancelar'),
                 ),
                 ElevatedButton(
@@ -170,28 +190,25 @@ class _HomeScreenState extends State<HomeScreen> {
                             return;
                           }
 
-                          // Ativa o loading no botão
                           setDialogState(() => salvando = true);
 
-                          // 1. Busca o ID do usuário no storage
                           final String? usuarioId = await _storage.read(key: "UsuarioId");
 
                           if (usuarioId != null) {
-                            // 2. Chama a função de criar lista criada no passo anterior
                             bool sucesso = await apiClient.criarLista(
                               usuarioId: usuarioId,
                               listaNome: nome,
                               onError: (mensagemErro) {
                                 ScaffoldMessenger.of(
                                   context,
-                                ).showSnackBar(SnackBar(content: Text(mensagemErro), backgroundColor: Colors.red));
+                                ).showSnackBar(SnackBar(content: Text(mensagemErro), backgroundColor: AppColors.error));
                               },
                             );
 
                             if (sucesso) {
                               if (dialogContext.mounted) {
-                                Navigator.pop(dialogContext); // Fecha o popup
-                                _carregarListas(); // Recarrega as listas para mostrar a nova
+                                Navigator.pop(dialogContext);
+                                _carregarListas();
                               }
                             }
                           } else {
@@ -200,14 +217,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             ).showSnackBar(const SnackBar(content: Text('Erro ao recuperar usuário.')));
                           }
 
-                          // Desativa o loading caso dê algum erro
                           setDialogState(() => salvando = false);
                         },
                   child: salvando
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.onPrimary, // Contraste correto sobre o botão laranja
+                          ),
                         )
                       : const Text('Criar'),
                 ),
