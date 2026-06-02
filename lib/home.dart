@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/api_client.dart';
 import 'package:flutter_application_1/models/list_compras.dart';
 import 'package:flutter_application_1/models/produto.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,6 +13,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ApiClient apiClient = ApiClient();
+  final _storage = const FlutterSecureStorage();
   List<dynamic> _listas = [];
   bool _isLoading = true;
   String? _erroMensagem;
@@ -51,13 +53,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Minhas Listas'), centerTitle: true),
-      body: _buildBody(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _mostrarPopupNovaLista,
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.add, color: Colors.white),
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Minhas Listas'), centerTitle: true),
+        body: _buildBody(),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _mostrarPopupNovaLista,
+          backgroundColor: Colors.blue,
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
       ),
     );
   }
@@ -164,8 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           setDialogState(() => salvando = true);
 
                           // 1. Busca o ID do usuário no storage
-                          // TODO: final String? usuarioId = await _storage.read(key: "UsuarioId");
-                          final String usuarioId = "56";
+                          final String? usuarioId = await _storage.read(key: "UsuarioId");
 
                           if (usuarioId != null) {
                             // 2. Chama a função de criar lista criada no passo anterior

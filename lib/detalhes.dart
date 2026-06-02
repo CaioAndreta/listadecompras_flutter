@@ -17,6 +17,7 @@ class ListaDetalhesScreen extends StatefulWidget {
 
 class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
   late List<Produto> _produtos;
+  bool _hasChange = false;
 
   @override
   void initState() {
@@ -68,6 +69,7 @@ class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
   @override
   Widget build(BuildContext context) {
     final categoriasAgrupadas = _produtosAgrupados;
+    final ApiClient apiClient = ApiClient();
 
     return Scaffold(
       appBar: AppBar(
@@ -117,7 +119,10 @@ class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
                             _produtos.remove(produto);
                           });
 
-                          // TODO: Chamar API de exclusão (RemoveProdutoLista) aqui
+                          apiClient.removerProdutoLista(
+                            listaId: int.parse(widget.lista.listaId),
+                            nomeProduto: produto.nome,
+                          );
 
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('${produto.nome} removido.'), duration: const Duration(seconds: 2)),

@@ -101,11 +101,13 @@ class ApiClient {
       if (response.statusCode == 200) {
         final List<dynamic> messages = response.data['Messages'] ?? [];
         final String usuarioNome = response.data['UsuarioNome'];
+        final String usuarioId = response.data['UsuarioId'].toString();
 
         bool logadoComSucesso = messages.any((msg) => msg['Id'] == 'Sucesso');
 
         if (logadoComSucesso) {
           await _storage.write(key: "UsuarioNome", value: usuarioNome);
+          await _storage.write(key: "UsuarioId", value: usuarioId);
 
           // Dica: Se o seu endpoint de login também retornasse o token original aqui,
           // você deveria salvar o 'access_token' e o 'token_expiry' aqui igual faz no refresh.
@@ -419,6 +421,40 @@ class ApiClient {
       return false;
     } catch (e) {
       debugPrint('Erro na requisição adicionarProdutoLista: $e');
+      return false;
+    }
+  }
+
+  Future<bool> removerProdutoLista({required int listaId, required String nomeProduto}) async {
+    const url = 'https://listadella.azurewebsites.net/apiListadella_desafio/RemoveProdutoLista';
+
+    // Repare que aqui não tem a chave "sdt...", os dados vão direto na raiz
+    // conforme o print do Postman
+    final body = {"UsuarioListaId": listaId, "UsuarioListaProdutosNome": nomeProduto};
+
+    try {
+      final response = await _dio.post(
+        url,
+        data: body,
+        options: Options(contentType: Headers.jsonContentType),
+      );
+
+      if (response.statusCode == 200 && response.data != null && response.data!.isNotEmpty) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.data!);
+
+        // Verifica a mensagem de sucesso da API
+        if (jsonResponse['Messages'] != null && jsonResponse['Messages'].isNotEmpty) {
+          final messageId = jsonResponse['Messages'][0]['Id'];
+          if (messageId == 'Sucesso') {
+            return true;
+          }
+        }
+      }
+
+      debugPrint('Falha ao remover. Status: ${response.statusCode}');
+      return false;
+    } catch (e) {
+      debugPrint('Erro na requisição removerProdutoLista: $e');
       return false;
     }
   }
