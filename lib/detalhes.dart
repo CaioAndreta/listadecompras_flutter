@@ -17,7 +17,6 @@ class ListaDetalhesScreen extends StatefulWidget {
 
 class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
   late List<Produto> _produtos;
-  bool _hasChange = false;
 
   @override
   void initState() {

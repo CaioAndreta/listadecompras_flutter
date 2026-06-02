@@ -16,7 +16,6 @@ class _NovoProdutoDialogState extends State<NovoProdutoDialog> {
   String _erro = '';
   Map<String, List<String>> _categoriasEProdutos = {};
   ApiClient apiClient = ApiClient();
-  bool _hasChange = false;
 
   String? _categoriaSelecionada;
   String? _produtoSelecionado;
