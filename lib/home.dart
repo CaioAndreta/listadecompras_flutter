@@ -110,7 +110,12 @@ class _HomeScreenState extends State<HomeScreen> {
         final String subtext = itens.map((item) => item.nome).join(', ');
 
         return InkWell(
-          onTap: () => Navigator.pushNamed(context, '/detalhes', arguments: lista),
+          onTap: () async {
+            await Navigator.pushNamed(context, '/detalhes', arguments: lista);
+            if (mounted) {
+              _carregarListas();
+            }
+          },
           child: Card(
             elevation: 2,
             margin: const EdgeInsets.symmetric(vertical: 6.0),
