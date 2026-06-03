@@ -43,7 +43,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final ApiClient apiClient = ApiClient();
 
     try {
-      await apiClient.signUp(
+      // Alteramos para capturar o resultado (bool) do ApiClient
+      final bool cadastroSucesso = await apiClient.signUp(
         nome: nome,
         email: email,
         senha: senha,
@@ -54,6 +55,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
           }
         },
       );
+
+      // Se o cadastro deu certo, exibe o Toast e vai para o Login
+      if (cadastroSucesso && mounted) {
+        _mostrarToastSucesso("Conta criada com sucesso!");
+
+        // Redireciona para a tela de Login.
+        // Se a sua rota for diferente de '/login', basta ajustar aqui:
+        Navigator.pushReplacementNamed(context, '/login');
+
+        // Dica: Se a tela de Login estiver logo "atrás" da tela de registro na pilha,
+        // você também poderia usar apenas Navigator.pop(context);
+      }
     } on DioException catch (e) {
       String mensagemErro = "Ocorreu um erro inesperado. Tente novamente.";
 
@@ -74,6 +87,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
         });
       }
     }
+  }
+
+  // NOVA FUNÇÃO: Exibe o Toast de sucesso
+  void _mostrarToastSucesso(String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white), // Ícone de check
+            const SizedBox(width: 8),
+            Text(mensagem, style: const TextStyle(color: Colors.white)),
+          ],
+        ),
+        backgroundColor: Colors.green, // Cor verde indicando sucesso
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   // Função para exibir o SnackBar (Toast) de erro
@@ -120,11 +151,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   // Campo de Nome
                   TextFormField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: "Nome",
-                      prefixIcon: Icon(Icons.person),
-                      // Borda manual removida: controlada globalmente pelo AppTheme
-                    ),
+                    decoration: const InputDecoration(labelText: "Nome", prefixIcon: Icon(Icons.person)),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return "Por favor, insira seu nome";
@@ -138,7 +165,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: const InputDecoration(labelText: "E-mail", prefixIcon: Icon(Icons.email)),
-                    // Validação local do campo de e-mail
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return "Por favor, insira seu e-mail";
@@ -153,9 +179,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   // Campo de Senha
                   TextFormField(
                     controller: _passwordController,
-                    obscureText: true, // Oculta os caracteres da senha
+                    obscureText: true,
                     decoration: const InputDecoration(labelText: "Senha", prefixIcon: Icon(Icons.lock)),
-                    // Validação local da senha
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return "Por favor, insira sua senha";
@@ -170,15 +195,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   // Botão de Registro / Indicador de Carregamento
                   ElevatedButton(
                     onPressed: _isLoading ? null : _realizarRegistro,
-                    // Estilização local removida: herdada inteiramente do AppTheme
                     child: _isLoading
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.onPrimary, // Garante contraste sobre o botão primário
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.onPrimary),
                           )
                         : const Text("Registrar"),
                   ),

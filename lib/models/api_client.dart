@@ -128,7 +128,7 @@ class ApiClient {
     }
   }
 
-  Future<void> signUp({
+  Future<bool> signUp({
     required String nome,
     required String email,
     required String senha,
@@ -150,7 +150,8 @@ class ApiClient {
 
       if (response.statusCode == 200) {
         final List<dynamic> messages = response.data['Messages'] ?? [];
-        final String usuarioNome = response.data['UsuarioNome'];
+        // Tratamento para caso o UsuarioNome venha nulo da API
+        final String usuarioNome = response.data['UsuarioNome'] ?? nome;
 
         bool logadoComSucesso = messages.any((msg) => msg['Id'] == 'Sucesso');
 
@@ -161,9 +162,8 @@ class ApiClient {
           await _storage.write(key: "user_email", value: email);
           await _storage.write(key: "user_password", value: senha);
 
-          if (context.mounted) {
-            Navigator.pushReplacementNamed(context, '/home');
-          }
+          // Retorna verdadeiro para a tela prosseguir com o Toast e a navegação
+          return true;
         } else {
           String mensagemErro = "Não foi possível realizar o registro. Verifique os dados.";
 
@@ -175,8 +175,10 @@ class ApiClient {
           }
 
           onError(mensagemErro);
+          return false; // Retorna falso em caso de erro da API
         }
       }
+      return false; // Retorna falso se o statusCode não for 200
     } on DioException catch (e) {
       String mensagem = e.message ?? "Ocorreu um erro inesperado. Tente novamente.";
       if (e.response?.statusCode == 400 || e.response?.statusCode == 404) {
@@ -185,8 +187,10 @@ class ApiClient {
         mensagem = "Conexão expirada. Verifique sua internet.";
       }
       onError(mensagem);
+      return false; // Retorna falso na falha do Dio
     } catch (e) {
       onError("Erro inesperado: $e");
+      return false; // Retorna falso em erros genéricos
     }
   }
 
