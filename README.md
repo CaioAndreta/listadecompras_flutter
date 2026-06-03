@@ -48,8 +48,7 @@ Por questões de segurança, as chaves de acesso e a URL de produção não est�
 
     Abra o arquivo .env em seu editor e adicione as seguintes variáveis com suas respectivas chaves:
 
-Snippet de código
-
+```bash
 # URL base da API do servidor
 API_BASE_URL=[https://lista***]
 
@@ -60,15 +59,18 @@ CLIENT_ID=ts4l43***
 USERNAME=caio_***
 PASSWORD=99114***
 
+```
+
 5. Verificar a Declaração de Assets
 
 Verifique se o arquivo .env está devidamente mapeado na seção de recursos do seu pubspec.yaml:
-YAML
 
+```bash
 flutter:
   uses-material-design: true
   assets:
     - .env
+```
 
 6. Executar o Aplicativo
 
