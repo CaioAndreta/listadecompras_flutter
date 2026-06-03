@@ -4,12 +4,9 @@ import 'package:flutter_application_1/models/api_client.dart';
 import 'package:flutter_application_1/models/list_compras.dart';
 import 'package:flutter_application_1/models/produto.dart';
 import 'package:flutter_application_1/novo_produto_modal.dart';
-import 'package:flutter_application_1/theme/app_colors.dart';
-import 'package:flutter_application_1/theme/app_constants.dart';
-import 'package:flutter_application_1/theme/app_text_styles.dart';
+import 'package:flutter_application_1/theme/theme.dart'; // Mantido centralizado
 
 class ListaDetalhesScreen extends StatefulWidget {
-  // Recebe o objeto completo da lista
   final ListaCompras lista;
 
   const ListaDetalhesScreen({super.key, required this.lista});
@@ -24,7 +21,6 @@ class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
   @override
   void initState() {
     super.initState();
-    // Carrega os produtos vindos do objeto completo
     _produtos = List.from(widget.lista.produtos);
   }
 
@@ -61,13 +57,10 @@ class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
     final ApiClient apiClient = ApiClient();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.lista.titulo),
-        // Cores removidas: O AppTheme assume o controle via ColorScheme
-      ),
+      backgroundColor: AppColors.canvasSoft, // Fundo levemente acinzentado/creme para destacar os cards brancos
+      appBar: AppBar(title: Text(widget.lista.titulo), centerTitle: true),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _mostrarPopupNovoItem(context),
-        // Cores removidas: O floatingActionButtonTheme do AppTheme já aplica o Laranja Primário e Ícone Branco
         child: const Icon(Icons.add),
       ),
       body: categoriasAgrupadas.isEmpty
@@ -78,54 +71,101 @@ class _ListaDetalhesScreenState extends State<ListaDetalhesScreen> {
               ),
             )
           : ListView.builder(
+              padding: const EdgeInsets.all(AppSpacing.md),
               itemCount: categoriasAgrupadas.keys.length,
               itemBuilder: (context, index) {
                 String nomeCategoria = categoriasAgrupadas.keys.elementAt(index);
                 List<Produto> itensDaCategoria = categoriasAgrupadas[nomeCategoria]!;
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      color: AppColors.canvasSoft,
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-                      child: Text(
-                        nomeCategoria.toUpperCase(),
-                        style: AppTextStyles.eyebrowUppercase.copyWith(color: AppColors.body),
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 1. Cabeçalho da Categoria (Centralizado com linhas laterais)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                        child: Row(
+                          children: [
+                            Expanded(child: Divider(color: AppColors.mute.withValues(alpha: 0.25), thickness: 1)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                              child: Text(
+                                nomeCategoria.toUpperCase(),
+                                style: AppTextStyles.eyebrowUppercase.copyWith(
+                                  color: AppColors.mute,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            Expanded(child: Divider(color: AppColors.mute.withValues(alpha: 0.25), thickness: 1)),
+                          ],
+                        ),
                       ),
-                    ),
-                    ...itensDaCategoria.map((produto) {
-                      return Dismissible(
-                        key: ValueKey('${produto.nome}_${produto.categoria}'),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          color: AppColors.error,
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: AppSpacing.xl),
-                          child: const Icon(Icons.delete_outline, color: AppColors.onError, size: 28),
-                        ),
-                        onDismissed: (direction) {
-                          setState(() {
-                            _produtos.remove(produto);
-                          });
 
-                          apiClient.removerProdutoLista(
-                            listaId: int.parse(widget.lista.listaId),
-                            nomeProduto: produto.nome,
-                          );
+                      // 2. Bloco agrupado de itens
+                      Card(
+                        elevation: 0,
+                        color: AppColors.canvas, // Branco quente do DS
+                        shape: const RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
+                        child: Column(
+                          children: itensDaCategoria.asMap().entries.map((entry) {
+                            final int idx = entry.key;
+                            final Produto produto = entry.value;
+                            final bool isLast = idx == itensDaCategoria.length - 1;
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('${produto.nome} removido.'), duration: const Duration(seconds: 2)),
-                          );
-                        },
-                        child: ProdutoListItem(
-                          produto: produto,
-                          listaId: int.tryParse(widget.lista.listaId.toString()) ?? 0,
+                            return Column(
+                              children: [
+                                Dismissible(
+                                  key: ValueKey('${produto.nome}_${produto.categoria}'),
+                                  direction: DismissDirection.endToStart,
+                                  background: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppColors.error,
+                                      borderRadius: isLast && idx == 0
+                                          ? AppRadius.mdAll
+                                          : BorderRadius.zero, // Arredonda o fundo vermelho se for o único item
+                                    ),
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.only(right: AppSpacing.xl),
+                                    child: const Icon(Icons.delete_outline, color: AppColors.onError, size: 28),
+                                  ),
+                                  onDismissed: (direction) {
+                                    setState(() {
+                                      _produtos.remove(produto);
+                                    });
+
+                                    apiClient.removerProdutoLista(
+                                      listaId: int.parse(widget.lista.listaId),
+                                      nomeProduto: produto.nome,
+                                    );
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('${produto.nome} removido.'),
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  },
+                                  child: ProdutoListItem(
+                                    produto: produto,
+                                    listaId: int.tryParse(widget.lista.listaId.toString()) ?? 0,
+                                  ),
+                                ),
+                                // Adiciona um divisor sutil entre os itens, exceto no último
+                                if (!isLast)
+                                  const Divider(
+                                    height: 1,
+                                    color: AppColors.canvasSoft,
+                                    indent: 56,
+                                  ), // Indent alinha a linha com o texto
+                              ],
+                            );
+                          }).toList(),
                         ),
-                      );
-                    }),
-                  ],
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
@@ -191,18 +231,36 @@ class _ProdutoListItemState extends State<ProdutoListItem> {
 
   @override
   Widget build(BuildContext context) {
-    return CheckboxListTile(
-      controlAffinity: ListTileControlAffinity.leading,
-      // ActiveColor removido. Ele puxará o AppColors.primary automaticamente pelo tema.
-      title: Text(
-        widget.produto.nome,
-        style: AppTextStyles.bodyMd.copyWith(
-          decoration: widget.produto.isChecked ? TextDecoration.lineThrough : TextDecoration.none,
-          color: widget.produto.isChecked ? AppColors.bodyMid : AppColors.ink,
+    // Substituímos o CheckboxListTile rígido por um InkWell + Row customizável
+    return InkWell(
+      onTap: () => _onCheckboxChanged(!widget.produto.isChecked),
+      borderRadius: AppRadius.mdAll,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+        child: Row(
+          children: [
+            // Checkbox circular customizado
+            Checkbox(
+              value: widget.produto.isChecked,
+              onChanged: _onCheckboxChanged,
+              shape: const CircleBorder(), // Transforma o quadrado em círculo
+              activeColor: AppColors.primary,
+              checkColor: AppColors.onPrimary,
+              side: const BorderSide(color: AppColors.mute, width: 1.5), // Borda cinza quando vazio
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: Text(
+                widget.produto.nome,
+                style: AppTextStyles.bodyMd.copyWith(
+                  decoration: widget.produto.isChecked ? TextDecoration.lineThrough : TextDecoration.none,
+                  color: widget.produto.isChecked ? AppColors.bodyMid : AppColors.ink,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      value: widget.produto.isChecked,
-      onChanged: _onCheckboxChanged,
     );
   }
 }

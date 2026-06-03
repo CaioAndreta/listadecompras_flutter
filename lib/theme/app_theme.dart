@@ -157,26 +157,29 @@ ThemeData appTheme() {
     // -------------------------------------------------------------------------
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.canvas,
+      fillColor: AppColors.canvasSoft, // Fundo destacado para campos preenchidos
       hintStyle: AppTextStyles.bodyMd.copyWith(color: AppColors.bodyMid),
       labelStyle: AppTextStyles.bodySm.copyWith(color: AppColors.body),
       floatingLabelStyle: AppTextStyles.caption.copyWith(color: AppColors.ink),
-      border: const OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
-        borderSide: BorderSide(color: AppColors.ink, width: 1),
+
+      // Bordas alteradas para UnderlineInputBorder com arredondamento apenas no topo
+      border: const UnderlineInputBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sm)),
+        borderSide: BorderSide(color: AppColors.mute, width: 1),
       ),
-      enabledBorder: const OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
-        borderSide: BorderSide(color: AppColors.ink, width: 1),
+      enabledBorder: const UnderlineInputBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sm)),
+        borderSide: BorderSide(color: AppColors.mute, width: 1),
       ),
-      focusedBorder: const OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
-        borderSide: BorderSide(color: AppColors.primary, width: 2),
+      focusedBorder: const UnderlineInputBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sm)),
+        borderSide: BorderSide(color: AppColors.primary, width: 2), // Linha primária ao focar
       ),
-      errorBorder: const OutlineInputBorder(
-        borderRadius: AppRadius.smAll,
+      errorBorder: const UnderlineInputBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sm)),
         borderSide: BorderSide(color: AppColors.error, width: 1),
       ),
+
       contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.lg),
     ),
 

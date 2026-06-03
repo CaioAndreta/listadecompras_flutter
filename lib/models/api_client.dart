@@ -195,8 +195,7 @@ class ApiClient {
 
     try {
       // 1. Resgata o UsuarioId armazenado no FlutterSecureStorage
-      // final String? usuarioId = await _storage.read(key: "UsuarioId");
-      final String usuarioId = "56";
+      final String? usuarioId = await _storage.read(key: "UsuarioId");
 
       // Validação caso o ID não exista localmente (ex: deslogado ou limpo)
       if (usuarioId == null || usuarioId.isEmpty) {
@@ -208,7 +207,7 @@ class ApiClient {
       final response = await _dio.get(
         url,
         queryParameters: {
-          "UsuarioId": 56, // O Dio injeta automaticamente como ?UsuarioId=valor
+          "UsuarioId": usuarioId, // O Dio injeta automaticamente como ?UsuarioId=valor
         },
       );
 
@@ -341,12 +340,13 @@ class ApiClient {
 
   Future<Map<String, List<String>>> listarProdutos() async {
     final url = 'https://listadella.azurewebsites.net/apiListadella_desafio/SelecionarCategoriaProdutos';
-
+    final String? usuarioId = await _storage.read(key: "UsuarioId");
+    
     try {
       final response = await _dio.get(
         url,
         queryParameters: {
-          "UsuarioId": 56, // O Dio injeta automaticamente como ?UsuarioId=valor
+          "UsuarioId": usuarioId, // O Dio injeta automaticamente como ?UsuarioId=valor
         },
       );
 
@@ -415,8 +415,7 @@ class ApiClient {
 
           if (messageId == 'Sucesso') {
             return true;
-          }
-          else if (messageId == 'Error') {
+          } else if (messageId == 'Error') {
             if (onError != null) {
               // Se a descrição da API indicar duplicidade, personaliza a mensagem
               if (description.contains('já existe')) {

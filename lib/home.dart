@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/api_client.dart';
 import 'package:flutter_application_1/models/list_compras.dart';
 import 'package:flutter_application_1/models/produto.dart';
-import 'package:flutter_application_1/theme/app_colors.dart';
-import 'package:flutter_application_1/theme/app_constants.dart';
-import 'package:flutter_application_1/theme/app_text_styles.dart';
+import 'package:flutter_application_1/theme/theme.dart'; // Mantive o import centralizado do seu DS
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -66,11 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         appBar: AppBar(title: const Text('Minhas Listas'), centerTitle: true),
         body: _buildBody(),
-        floatingActionButton: FloatingActionButton(
-          onPressed: _mostrarPopupNovaLista,
-          // Cores manuais removidas: herdadas do floatingActionButtonTheme do seu AppTheme
-          child: const Icon(Icons.add),
-        ),
+        floatingActionButton: FloatingActionButton(onPressed: _mostrarPopupNovaLista, child: const Icon(Icons.add)),
       ),
     );
   }
@@ -109,41 +103,63 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // 4. Exibição dos dados com Cards contendo apenas o Título
+    // 4. Exibição dos dados com Layout Refinado (Baseado na referência)
     return ListView.builder(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.lg), // Espaçamento externo mais generoso
       itemCount: _listas.length,
       itemBuilder: (context, index) {
         final ListaCompras lista = ListaCompras.fromJson(_listas[index]);
         final String titulo = lista.titulo;
         final List<Produto> itens = lista.produtos;
-        final String subtext = itens.isEmpty ? 'Nenhum produto cadastrado' : itens.map((item) => item.nome).join(', ');
+        final int qtdItens = itens.length;
 
-        return InkWell(
-          onTap: () async {
-            await Navigator.pushNamed(context, '/detalhes', arguments: lista);
-            if (mounted) {
-              _carregarListas();
-            }
-          },
-          child: Card(
-            margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-            // Opcional: Se quiser reforçar a cor de card do seu design system:
-            color: AppColors.canvasSoft,
-            elevation: 0, // Zapier DS foca em flats/bordas sutis em vez de sombras pesadas
-            shape: const RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
-            child: ListTile(
-              title: Text(
-                titulo,
-                style: AppTextStyles.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.ink),
+        // Formatação da legenda: "X itens ● Produto 1, Produto 2..."
+        String subtext;
+        if (qtdItens == 0) {
+          subtext = 'Nenhum item cadastrado';
+        } else {
+          final String nomes = itens.map((item) => item.nome).join(', ');
+          final String labelItem = qtdItens == 1 ? 'item' : 'itens';
+          subtext = '$qtdItens $labelItem ● $nomes';
+        }
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: AppSpacing.md), // Espaço entre os cards
+          color: AppColors.canvasSoft,
+          elevation: 0,
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
+          child: InkWell(
+            borderRadius: AppRadius.mdAll, // Garante que o ripple effect siga a borda
+            onTap: () async {
+              await Navigator.pushNamed(context, '/detalhes', arguments: lista);
+              if (mounted) {
+                _carregarListas();
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg), // Padding interno do card
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(titulo, style: AppTextStyles.bodyMdStrong.copyWith(color: AppColors.ink)),
+                  const SizedBox(height: AppSpacing.xs), // Gap de 4px entre título e subtítulo
+                  Row(
+                    children: [
+                      // Opcional: um ícone de clip ou lista pequenininho como na imagem
+                      const Icon(Icons.check_box_outlined, size: 14, color: AppColors.bodyMid),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          subtext,
+                          style: AppTextStyles.caption.copyWith(color: AppColors.bodyMid),
+                          maxLines: 1, // Trava em 1 linha
+                          overflow: TextOverflow.ellipsis, // Adiciona as reticências
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              subtitle: Text(
-                subtext,
-                style: AppTextStyles.caption, // Já configurado para 14px e AppColors.bodyMid
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              leading: const Icon(Icons.list_alt, color: AppColors.primary),
             ),
           ),
         );
@@ -166,11 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
               content: TextField(
                 controller: nomeListaController,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Nome da Lista',
-                  hintText: 'Ex: Compras do Mês',
-                  // Borda removida daqui: O inputDecorationTheme do seu AppTheme já cuida do OutlineInputBorder global
-                ),
+                decoration: const InputDecoration(labelText: 'Nome da Lista', hintText: 'Ex: Compras do Mês'),
               ),
               actions: [
                 TextButton(
@@ -223,10 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.onPrimary, // Contraste correto sobre o botão laranja
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.onPrimary),
                         )
                       : const Text('Criar'),
                 ),
