@@ -56,6 +56,10 @@ API_BASE_URL=[https://lista***]
 # Chave do cliente para autenticação OAuth2 (Password Grant)
 CLIENT_ID=ts4l43***
 
+# Usuário e senha para acesso do Bearer Token
+USERNAME=caio_***
+PASSWORD=99114***
+
 5. Verificar a Declaração de Assets
 
 Verifique se o arquivo .env está devidamente mapeado na seção de recursos do seu pubspec.yaml:

@@ -438,8 +438,8 @@ class ApiClient {
   Future<bool> _refreshToken() async {
     try {
       final String? clientId = dotenv.env['CLIENT_ID'];
-      final String? username = await _storage.read(key: 'user_email');
-      final String? password = await _storage.read(key: 'user_password');
+      final String? username = dotenv.env['USERNAME'];
+      final String? password = dotenv.env['PASSWORD'];
 
       if (username == null || password == null || clientId == null) {
         debugPrint('Credenciais ausentes no armazenamento seguro.');
