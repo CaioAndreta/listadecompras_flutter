@@ -7,8 +7,13 @@ import 'package:flutter_application_1/models/list_compras.dart';
 import 'package:flutter_application_1/sign_up.dart';
 import 'package:flutter_application_1/splash_screen.dart';
 import 'package:flutter_application_1/theme/app_theme.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 3. Carregue o arquivo .env
+  await dotenv.load(fileName: ".env");
   runApp(const MyApp());
 }
 
